@@ -131,10 +131,30 @@
 
         .result-text {
             font-size: 16px;
-            color: #333;
+            color: #007bff;
             font-weight: bold;
             word-wrap: break-word;
             transition: all 0.3s ease;
+            cursor: pointer;
+            text-decoration: underline;
+            padding: 5px;
+            border-radius: 5px;
+        }
+
+        .result-text:hover {
+            background-color: #e7f1ff;
+            color: #0056b3;
+        }
+
+        .result-text.no-link {
+            color: #333;
+            cursor: default;
+            text-decoration: none;
+        }
+
+        .result-text.no-link:hover {
+            background-color: transparent;
+            color: #333;
         }
 
         .scan-history {
@@ -168,6 +188,28 @@
             align-items: center;
         }
 
+        .history-content {
+            cursor: pointer;
+            color: #007bff;
+            text-decoration: underline;
+            flex: 1;
+            word-break: break-all;
+        }
+
+        .history-content:hover {
+            color: #0056b3;
+        }
+
+        .history-content.no-link {
+            color: #333;
+            cursor: default;
+            text-decoration: none;
+        }
+
+        .history-content.no-link:hover {
+            color: #333;
+        }
+
         .history-item:last-child {
             margin-bottom: 0;
         }
@@ -176,6 +218,7 @@
             font-size: 11px;
             color: #999;
             margin-left: 10px;
+            white-space: nowrap;
         }
 
         .status-indicator {
@@ -204,6 +247,69 @@
 
         .file-input {
             display: none;
+        }
+
+        /* Custom Alert Styling */
+        .custom-alert-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .custom-alert-overlay.show {
+            display: flex;
+        }
+
+        .custom-alert-box {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        .custom-alert-icon {
+            font-size: 50px;
+            margin-bottom: 15px;
+        }
+
+        .custom-alert-message {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 20px;
+            word-break: break-all;
+        }
+
+        .custom-alert-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .custom-alert-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .link-info {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #666;
         }
 
         @media (max-width: 480px) {
@@ -255,7 +361,9 @@
 
         <div class="result-container">
             <div class="result-label">📋 Hasil Scan Terakhir:</div>
-            <div class="result-text" id="scan-result">Menunggu scan...</div>
+            <div class="result-text" id="scan-result" onclick="handleResultClick(this)">
+                Menunggu scan...
+            </div>
         </div>
 
         <div class="scan-history">
@@ -268,6 +376,16 @@
         </div>
     </div>
 
+    <!-- Custom Alert Popup -->
+    <div class="custom-alert-overlay" id="custom-alert">
+        <div class="custom-alert-box">
+            <div class="custom-alert-icon">✅</div>
+            <div class="custom-alert-message" id="alert-message"></div>
+            <div class="link-info" id="link-info"></div>
+            <button class="custom-alert-button" onclick="closeCustomAlert()">OK</button>
+        </div>
+    </div>
+
     <!-- Menggunakan library html5-qrcode yang lebih stabil -->
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     
@@ -277,6 +395,53 @@
         let isScanning = false;
         let scanHistory = JSON.parse(localStorage.getItem('scanHistory') || '[]');
         let cameras = [];
+        let lastScannedResult = '';
+
+        // Custom Alert Functions
+        function showCustomAlert(message, isLink = false) {
+            document.getElementById('alert-message').textContent = message;
+            const linkInfo = document.getElementById('link-info');
+            
+            if (isLink) {
+                linkInfo.textContent = '💡 Klik hasil scan untuk membuka link';
+                linkInfo.style.display = 'block';
+            } else {
+                linkInfo.textContent = '';
+                linkInfo.style.display = 'none';
+            }
+            
+            document.getElementById('custom-alert').classList.add('show');
+        }
+
+        function closeCustomAlert() {
+            document.getElementById('custom-alert').classList.remove('show');
+        }
+
+        // Fungsi untuk mengecek apakah string adalah URL
+        function isValidUrl(string) {
+            try {
+                const url = new URL(string);
+                return url.protocol === 'http:' || url.protocol === 'https:';
+            } catch (_) {
+                return false;
+            }
+        }
+
+        // Fungsi untuk membuka link dari hasil scan
+        function handleResultClick(element) {
+            const text = element.textContent;
+            
+            if (text && text !== 'Menunggu scan...' && isValidUrl(text)) {
+                window.open(text, '_blank');
+            }
+        }
+
+        // Fungsi untuk membuka link dari history
+        function openLinkFromHistory(content) {
+            if (isValidUrl(content)) {
+                window.open(content, '_blank');
+            }
+        }
 
         // Inisialisasi scanner
         function initScanner() {
@@ -375,21 +540,39 @@
         function onScanSuccess(decodedText, decodedResult) {
             console.log('Scan berhasil:', decodedText);
             
+            lastScannedResult = decodedText;
+            
             // Update tampilan hasil
             const resultElement = document.getElementById('scan-result');
             resultElement.textContent = decodedText;
             
+            // Cek apakah hasil scan adalah URL
+            const isLink = isValidUrl(decodedText);
+            
+            if (isLink) {
+                resultElement.className = 'result-text';
+                resultElement.title = 'Klik untuk membuka link';
+                resultElement.style.cursor = 'pointer';
+            } else {
+                resultElement.className = 'result-text no-link';
+                resultElement.title = '';
+                resultElement.style.cursor = 'default';
+            }
+            
             // Animasi feedback
-            resultElement.style.color = '#667eea';
+            resultElement.style.color = '#007bff';
             resultElement.style.transform = 'scale(1.05)';
             setTimeout(() => {
-                resultElement.style.color = '#333';
+                if (!isLink) {
+                    resultElement.style.color = '#333';
+                }
                 resultElement.style.transform = 'scale(1)';
             }, 300);
 
             // Simpan ke riwayat
             const scanEntry = {
                 content: decodedText,
+                isLink: isLink,
                 timestamp: new Date().toLocaleString('id-ID', {
                     day: 'numeric',
                     month: 'short',
@@ -408,13 +591,11 @@
             localStorage.setItem('scanHistory', JSON.stringify(scanHistory));
             updateHistoryDisplay();
 
-            // Berhenti scanning sementara untuk mencegah multiple scan
+            // Tampilkan popup custom
+            showCustomAlert('Scan Berhasil!\n\n' + decodedText, isLink);
+            
+            // Hentikan scanner setelah scan berhasil
             stopScanner();
-            setTimeout(() => {
-                if (confirm('Scan berhasil!\n\nHasil: ' + decodedText + '\n\nLanjutkan scan?')) {
-                    startScanner();
-                }
-            }, 500);
         }
 
         // Callback saat scan error (biasanya frame tanpa barcode)
@@ -429,7 +610,7 @@
                 html5QrCode.stop()
                     .then(() => {
                         isScanning = false;
-                        updateStatus('stopped', '⏸ Scanner dihentikan');
+                        updateStatus('stopped', '⏸ Scanner dihentikan. Siap scan lagi');
                         updateButtons();
                         console.log('Scanner dihentikan');
                     })
@@ -529,7 +710,11 @@
 
             historyList.innerHTML = scanHistory.map(entry => `
                 <div class="history-item">
-                    <span>${entry.content}</span>
+                    <span class="history-content ${entry.isLink ? '' : 'no-link'}" 
+                          onclick="${entry.isLink ? `openLinkFromHistory('${entry.content.replace(/'/g, "\\'")}')` : ''}"
+                          title="${entry.isLink ? 'Klik untuk membuka link' : ''}">
+                        ${entry.content}
+                    </span>
                     <span class="history-time">${entry.timestamp}</span>
                 </div>
             `).join('');
