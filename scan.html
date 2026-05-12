@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scanner Barcode - HTML5</title>
+    <title>Scanner Barcode - Android Compatible</title>
     <style>
         * {
             margin: 0;
@@ -25,20 +25,20 @@
             background: white;
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            padding: 30px;
+            padding: 20px;
             max-width: 500px;
             width: 100%;
         }
 
         .scanner-header {
             text-align: center;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
         }
 
         .scanner-header h1 {
             color: #333;
-            font-size: 28px;
-            margin-bottom: 10px;
+            font-size: 24px;
+            margin-bottom: 5px;
         }
 
         .scanner-header p {
@@ -46,59 +46,33 @@
             font-size: 14px;
         }
 
-        .video-container {
-            position: relative;
+        #reader {
             width: 100%;
             border-radius: 15px;
             overflow: hidden;
-            margin-bottom: 20px;
-            border: 3px solid #667eea;
+            margin-bottom: 15px;
+            border: 2px solid #667eea;
         }
 
-        #scanner-video {
-            width: 100%;
-            display: block;
-        }
-
-        .scan-region-highlight {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 250px;
-            height: 250px;
-            border: 2px solid rgba(255, 255, 255, 0.8);
-            box-shadow: 0 0 0 2000px rgba(0, 0, 0, 0.3);
-            border-radius: 10px;
-        }
-
-        .scan-line {
-            position: absolute;
-            width: 100%;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, #00ff88, transparent);
-            top: 0;
-            animation: scanAnimation 2s infinite;
-        }
-
-        @keyframes scanAnimation {
-            0% { top: 0; }
-            50% { top: 100%; }
-            100% { top: 0; }
+        #reader video {
+            width: 100% !important;
+            height: auto !important;
         }
 
         .button-group {
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
+            flex-wrap: wrap;
         }
 
         button {
             flex: 1;
-            padding: 12px;
+            min-width: 100px;
+            padding: 12px 15px;
             border: none;
             border-radius: 10px;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -113,8 +87,17 @@
             background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
         }
 
-        .btn-clear {
+        .btn-switch {
             background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .btn-clear {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+
+        .btn-file {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            color: #333;
         }
 
         button:hover {
@@ -135,31 +118,33 @@
         .result-container {
             background: #f8f9fa;
             border-radius: 10px;
-            padding: 20px;
+            padding: 15px;
             border: 2px solid #e9ecef;
+            margin-bottom: 15px;
         }
 
         .result-label {
-            font-size: 14px;
+            font-size: 12px;
             color: #666;
             margin-bottom: 5px;
         }
 
         .result-text {
-            font-size: 18px;
+            font-size: 16px;
             color: #333;
             font-weight: bold;
             word-wrap: break-word;
+            transition: all 0.3s ease;
         }
 
         .scan-history {
-            margin-top: 20px;
+            margin-top: 15px;
         }
 
         .scan-history h3 {
             color: #333;
             margin-bottom: 10px;
-            font-size: 18px;
+            font-size: 16px;
         }
 
         .history-list {
@@ -171,13 +156,16 @@
         }
 
         .history-item {
-            padding: 10px;
-            margin-bottom: 8px;
+            padding: 8px 10px;
+            margin-bottom: 6px;
             background: white;
             border-radius: 8px;
             border-left: 4px solid #667eea;
-            font-size: 14px;
+            font-size: 13px;
             color: #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .history-item:last-child {
@@ -185,17 +173,48 @@
         }
 
         .history-time {
-            font-size: 12px;
+            font-size: 11px;
             color: #999;
+            margin-left: 10px;
         }
 
-        .camera-select {
-            width: 100%;
-            padding: 10px;
-            border: 2px solid #e9ecef;
-            border-radius: 10px;
-            font-size: 14px;
-            margin-bottom: 15px;
+        .status-indicator {
+            text-align: center;
+            margin-bottom: 10px;
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .status-scanning {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-stopped {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-loading {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        @media (max-width: 480px) {
+            .scanner-container {
+                padding: 15px;
+            }
+            
+            .button-group button {
+                font-size: 12px;
+                padding: 10px;
+            }
         }
     </style>
 </head>
@@ -203,151 +222,182 @@
     <div class="scanner-container">
         <div class="scanner-header">
             <h1>📱 Scanner Barcode</h1>
-            <p>Scan barcode menggunakan kamera Anda</p>
+            <p>Scan QR Code & Barcode dengan Mudah</p>
         </div>
 
-        <select id="camera-select" class="camera-select">
-            <option value="">Pilih Kamera...</option>
-        </select>
+        <div id="status-indicator" class="status-indicator status-loading">
+            ⏳ Memuat scanner...
+        </div>
 
-        <div class="video-container">
-            <video id="scanner-video" autoplay playsinline></video>
-            <div class="scan-region-highlight">
-                <div class="scan-line"></div>
-            </div>
+        <div id="reader"></div>
+
+        <div class="button-group">
+            <button class="btn-start" onclick="startScanner()" id="btn-start">
+                ▶ Mulai
+            </button>
+            <button class="btn-stop" onclick="stopScanner()" id="btn-stop" disabled>
+                ⏹ Stop
+            </button>
+            <button class="btn-switch" onclick="switchCamera()" id="btn-switch" disabled>
+                🔄 Ganti Kamera
+            </button>
         </div>
 
         <div class="button-group">
-            <button class="btn-start" onclick="startScanner()">▶ Mulai Scan</button>
-            <button class="btn-stop" onclick="stopScanner()">⏹ Stop</button>
-            <button class="btn-clear" onclick="clearHistory()">🗑 Clear History</button>
+            <button class="btn-clear" onclick="clearHistory()">
+                🗑 Clear History
+            </button>
+            <button class="btn-file" onclick="document.getElementById('file-input').click()">
+                📁 Scan dari Gambar
+            </button>
+            <input type="file" id="file-input" class="file-input" accept="image/*" onchange="scanFromFile(event)">
         </div>
 
         <div class="result-container">
-            <div class="result-label">Hasil Scan Terakhir:</div>
+            <div class="result-label">📋 Hasil Scan Terakhir:</div>
             <div class="result-text" id="scan-result">Menunggu scan...</div>
         </div>
 
         <div class="scan-history">
-            <h3>Riwayat Scan</h3>
+            <h3>📝 Riwayat Scan</h3>
             <div class="history-list" id="history-list">
-                <div style="color: #999; text-align: center;">Belum ada hasil scan</div>
+                <div style="color: #999; text-align: center; padding: 20px;">
+                    Belum ada hasil scan
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Library Instascan untuk scanning barcode -->
-    <script src="https://unpkg.com/instascan@2.0.0-rc.4/dist/instascan.min.js"></script>
+    <!-- Menggunakan library html5-qrcode yang lebih stabil -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     
     <script>
-        let scanner = null;
-        let currentCamera = null;
+        let html5QrCode = null;
+        let currentCameraId = null;
+        let isScanning = false;
         let scanHistory = JSON.parse(localStorage.getItem('scanHistory') || '[]');
+        let cameras = [];
 
         // Inisialisasi scanner
         function initScanner() {
             try {
-                scanner = new Instascan.Scanner({
-                    video: document.getElementById('scanner-video'),
-                    mirror: false,
-                    backgroundScan: false,
-                    scanPeriod: 1
-                });
-
-                scanner.addListener('scan', function(content) {
-                    handleScanResult(content);
-                });
-
+                html5QrCode = new Html5Qrcode("reader");
+                updateStatus('loading', '⏳ Memeriksa kamera...');
                 getCameras();
             } catch (error) {
-                console.error('Error inisialisasi scanner:', error);
-                alert('Gagal menginisialisasi scanner. Pastikan Anda mengakses melalui HTTPS atau localhost.');
+                console.error('Error inisialisasi:', error);
+                updateStatus('stopped', '❌ Gagal inisialisasi scanner');
             }
         }
 
         // Mendapatkan daftar kamera
         function getCameras() {
-            Instascan.Camera.getCameras().then(function(cameras) {
-                const select = document.getElementById('camera-select');
-                select.innerHTML = '<option value="">Pilih Kamera...</option>';
-                
-                if (cameras.length > 0) {
-                    cameras.forEach(function(camera, index) {
-                        const option = document.createElement('option');
-                        option.value = index;
-                        option.text = camera.name || `Kamera ${index + 1}`;
-                        select.appendChild(option);
-                    });
-                    
-                    // Auto-start dengan kamera belakang jika tersedia
-                    const backCamera = cameras.findIndex(camera => 
-                        camera.name && camera.name.toLowerCase().includes('back')
-                    );
-                    if (backCamera !== -1) {
-                        select.value = backCamera;
-                        startWithCamera(cameras[backCamera]);
+            Html5Qrcode.getCameras()
+                .then(devices => {
+                    cameras = devices;
+                    if (devices && devices.length > 0) {
+                        console.log('Kamera tersedia:', devices);
+                        updateStatus('stopped', `✅ ${devices.length} kamera ditemukan. Klik "Mulai" untuk scan`);
+                        
+                        // Cari kamera belakang secara otomatis
+                        let backCamera = devices.find(camera => 
+                            camera.label && camera.label.toLowerCase().includes('back')
+                        );
+                        
+                        // Jika tidak ada kamera belakang, gunakan kamera pertama
+                        if (!backCamera && devices.length > 0) {
+                            backCamera = devices[0];
+                        }
+                        
+                        if (backCamera) {
+                            currentCameraId = backCamera.id;
+                            console.log('Kamera dipilih:', backCamera.label);
+                        }
+                        
+                        enableButtons(true);
+                    } else {
+                        updateStatus('stopped', '❌ Tidak ada kamera ditemukan');
+                        enableButtons(false);
                     }
-                } else {
-                    select.innerHTML = '<option value="">Tidak ada kamera tersedia</option>';
-                }
-            }).catch(function(error) {
-                console.error('Error mendapatkan kamera:', error);
-                alert('Gagal mengakses kamera. Pastikan Anda memberikan izin akses kamera.');
-            });
+                })
+                .catch(err => {
+                    console.error('Error mendapatkan kamera:', err);
+                    updateStatus('stopped', '❌ Gagal mengakses kamera. Izinkan akses kamera dan refresh halaman');
+                    enableButtons(false);
+                });
         }
 
-        // Memulai scanner dengan kamera tertentu
-        function startWithCamera(camera) {
-            currentCamera = camera;
-            scanner.start(camera).then(() => {
-                console.log('Scanner dimulai');
-            }).catch(error => {
-                console.error('Error memulai scanner:', error);
-                alert('Gagal memulai scanner. Pastikan kamera tidak sedang digunakan.');
-            });
-        }
-
-        // Fungsi untuk memulai scanner
+        // Memulai scanner
         function startScanner() {
-            const select = document.getElementById('camera-select');
-            const selectedIndex = select.value;
-            
-            if (selectedIndex === '') {
-                alert('Silakan pilih kamera terlebih dahulu');
+            if (!html5QrCode || isScanning) return;
+
+            if (!currentCameraId && cameras.length > 0) {
+                currentCameraId = cameras[0].id;
+            }
+
+            if (!currentCameraId) {
+                alert('Tidak ada kamera tersedia');
                 return;
             }
 
-            Instascan.Camera.getCameras().then(function(cameras) {
-                const camera = cameras[selectedIndex];
-                if (camera) {
-                    startWithCamera(camera);
-                }
-            }).catch(function(error) {
-                console.error('Error memulai scanner:', error);
-                alert('Gagal memulai scanner');
+            const config = {
+                fps: 10,
+                qrbox: { width: 250, height: 250 },
+                aspectRatio: 1.0,
+                showTorchButtonIfSupported: true,
+                showZoomSliderIfSupported: true,
+            };
+
+            updateStatus('loading', '⏳ Memulai kamera...');
+            
+            html5QrCode.start(
+                currentCameraId,
+                config,
+                onScanSuccess,
+                onScanError
+            )
+            .then(() => {
+                isScanning = true;
+                updateStatus('scanning', '🔍 Scanner aktif - Arahkan ke barcode');
+                updateButtons();
+                console.log('Scanner berhasil dimulai');
+            })
+            .catch(err => {
+                console.error('Error memulai scanner:', err);
+                isScanning = false;
+                updateStatus('stopped', '❌ Gagal memulai scanner: ' + err.message);
+                updateButtons();
+                alert('Gagal memulai scanner. Error: ' + err.message + '\n\nCoba:\n1. Refresh halaman\n2. Izinkan akses kamera\n3. Gunakan browser Chrome');
             });
         }
 
-        // Fungsi untuk menghentikan scanner
-        function stopScanner() {
-            if (scanner) {
-                scanner.stop().then(() => {
-                    console.log('Scanner dihentikan');
-                }).catch(error => {
-                    console.error('Error menghentikan scanner:', error);
-                });
-            }
-        }
-
-        // Menangani hasil scan
-        function handleScanResult(content) {
-            // Update hasil terakhir
-            document.getElementById('scan-result').textContent = content;
+        // Callback saat scan berhasil
+        function onScanSuccess(decodedText, decodedResult) {
+            console.log('Scan berhasil:', decodedText);
             
+            // Update tampilan hasil
+            const resultElement = document.getElementById('scan-result');
+            resultElement.textContent = decodedText;
+            
+            // Animasi feedback
+            resultElement.style.color = '#667eea';
+            resultElement.style.transform = 'scale(1.05)';
+            setTimeout(() => {
+                resultElement.style.color = '#333';
+                resultElement.style.transform = 'scale(1)';
+            }, 300);
+
             // Simpan ke riwayat
             const scanEntry = {
-                content: content,
-                timestamp: new Date().toLocaleString('id-ID')
+                content: decodedText,
+                timestamp: new Date().toLocaleString('id-ID', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                })
             };
             
             scanHistory.unshift(scanEntry);
@@ -355,26 +405,117 @@
                 scanHistory = scanHistory.slice(0, 50);
             }
             
-            // Simpan ke localStorage
             localStorage.setItem('scanHistory', JSON.stringify(scanHistory));
-            
-            // Update tampilan riwayat
             updateHistoryDisplay();
-            
-            // Feedback visual
-            playFeedback();
+
+            // Berhenti scanning sementara untuk mencegah multiple scan
+            stopScanner();
+            setTimeout(() => {
+                if (confirm('Scan berhasil!\n\nHasil: ' + decodedText + '\n\nLanjutkan scan?')) {
+                    startScanner();
+                }
+            }, 500);
         }
 
-        // Memberikan feedback saat scan berhasil
-        function playFeedback() {
-            const resultDiv = document.querySelector('.result-text');
-            resultDiv.style.color = '#667eea';
-            resultDiv.style.transform = 'scale(1.1)';
+        // Callback saat scan error (biasanya frame tanpa barcode)
+        function onScanError(errorMessage) {
+            // Tidak perlu menampilkan error setiap frame
+            // console.log('Scan error:', errorMessage);
+        }
+
+        // Menghentikan scanner
+        function stopScanner() {
+            if (html5QrCode && isScanning) {
+                html5QrCode.stop()
+                    .then(() => {
+                        isScanning = false;
+                        updateStatus('stopped', '⏸ Scanner dihentikan');
+                        updateButtons();
+                        console.log('Scanner dihentikan');
+                    })
+                    .catch(err => {
+                        console.error('Error menghentikan scanner:', err);
+                    });
+            }
+        }
+
+        // Mengganti kamera (depan/belakang)
+        function switchCamera() {
+            if (!html5QrCode || cameras.length < 2) {
+                alert('Hanya tersedia 1 kamera');
+                return;
+            }
+
+            stopScanner();
             
+            // Cari index kamera saat ini
+            let currentIndex = cameras.findIndex(camera => camera.id === currentCameraId);
+            
+            // Pindah ke kamera berikutnya
+            currentIndex = (currentIndex + 1) % cameras.length;
+            currentCameraId = cameras[currentIndex].id;
+            
+            console.log('Beralih ke kamera:', cameras[currentIndex].label);
+            
+            // Mulai scanner dengan kamera baru
             setTimeout(() => {
-                resultDiv.style.color = '#333';
-                resultDiv.style.transform = 'scale(1)';
-            }, 300);
+                startScanner();
+            }, 500);
+        }
+
+        // Scan barcode dari file gambar
+        function scanFromFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            stopScanner();
+            updateStatus('loading', '⏳ Memproses gambar...');
+
+            html5QrCode.scanFile(file, true)
+                .then(decodedText => {
+                    onScanSuccess(decodedText, null);
+                    updateStatus('stopped', '✅ Scan dari gambar berhasil');
+                })
+                .catch(err => {
+                    console.error('Error scan file:', err);
+                    alert('Gagal membaca barcode dari gambar. Pastikan gambar berisi barcode yang jelas.');
+                    updateStatus('stopped', '❌ Gagal membaca barcode dari gambar');
+                });
+            
+            // Reset input file
+            event.target.value = '';
+        }
+
+        // Update status indicator
+        function updateStatus(type, message) {
+            const indicator = document.getElementById('status-indicator');
+            indicator.textContent = message;
+            indicator.className = 'status-indicator';
+            
+            switch(type) {
+                case 'scanning':
+                    indicator.classList.add('status-scanning');
+                    break;
+                case 'stopped':
+                    indicator.classList.add('status-stopped');
+                    break;
+                case 'loading':
+                    indicator.classList.add('status-loading');
+                    break;
+            }
+        }
+
+        // Enable/disable buttons
+        function enableButtons(enable) {
+            document.getElementById('btn-start').disabled = !enable;
+            document.getElementById('btn-switch').disabled = !enable || cameras.length < 2;
+        }
+
+        // Update button states
+        function updateButtons() {
+            document.getElementById('btn-start').disabled = isScanning;
+            document.getElementById('btn-stop').disabled = !isScanning;
+            document.getElementById('btn-switch').disabled = isScanning || cameras.length < 2;
         }
 
         // Update tampilan riwayat
@@ -382,14 +523,14 @@
             const historyList = document.getElementById('history-list');
             
             if (scanHistory.length === 0) {
-                historyList.innerHTML = '<div style="color: #999; text-align: center;">Belum ada hasil scan</div>';
+                historyList.innerHTML = '<div style="color: #999; text-align: center; padding: 20px;">Belum ada hasil scan</div>';
                 return;
             }
 
             historyList.innerHTML = scanHistory.map(entry => `
                 <div class="history-item">
-                    <div>${entry.content}</div>
-                    <div class="history-time">${entry.timestamp}</div>
+                    <span>${entry.content}</span>
+                    <span class="history-time">${entry.timestamp}</span>
                 </div>
             `).join('');
         }
@@ -403,23 +544,24 @@
             }
         }
 
-        // Event listener untuk pemilihan kamera
-        document.getElementById('camera-select').addEventListener('change', function() {
-            stopScanner();
-            if (this.value !== '') {
-                startScanner();
-            }
-        });
-
         // Inisialisasi saat halaman dimuat
         window.addEventListener('load', function() {
             initScanner();
             updateHistoryDisplay();
         });
 
-        // Hentikan scanner saat halaman ditutup
+        // Cleanup saat halaman ditutup
         window.addEventListener('beforeunload', function() {
-            stopScanner();
+            if (html5QrCode && isScanning) {
+                html5QrCode.stop().catch(err => console.error(err));
+            }
+        });
+
+        // Handle visibility change (saat user pindah tab)
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden && isScanning) {
+                stopScanner();
+            }
         });
     </script>
 </body>
