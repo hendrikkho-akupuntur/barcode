@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scanner Barcode - HTML5</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .scanner-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 30px;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .scanner-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .scanner-header h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .scanner-header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            border: 3px solid #667eea;
+        }
+
+        #scanner-video {
+            width: 100%;
+            display: block;
+        }
+
+        .scan-region-highlight {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 250px;
+            height: 250px;
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 0 2000px rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+        }
+
+        .scan-line {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00ff88, transparent);
+            top: 0;
+            animation: scanAnimation 2s infinite;
+        }
+
+        @keyframes scanAnimation {
+            0% { top: 0; }
+            50% { top: 100%; }
+            100% { top: 0; }
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .btn-stop {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .btn-clear {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result-container {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            border: 2px solid #e9ecef;
+        }
+
+        .result-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .result-text {
+            font-size: 18px;
+            color: #333;
+            font-weight: bold;
+            word-wrap: break-word;
+        }
+
+        .scan-history {
+            margin-top: 20px;
+        }
+
+        .scan-history h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .history-list {
+            max-height: 200px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        .history-item {
+            padding: 10px;
+            margin-bottom: 8px;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .history-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .history-time {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .camera-select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="scanner-container">
+        <div class="scanner-header">
+            <h1>📱 Scanner Barcode</h1>
+            <p>Scan barcode menggunakan kamera Anda</p>
+        </div>
+
+        <select id="camera-select" class="camera-select">
+            <option value="">Pilih Kamera...</option>
+        </select>
+
+        <div class="video-container">
+            <video id="scanner-video" autoplay playsinline></video>
+            <div class="scan-region-highlight">
+                <div class="scan-line"></div>
+            </div>
+        </div>
+
+        <div class="button-group">
+            <button class="btn-start" onclick="startScanner()">▶ Mulai Scan</button>
+            <button class="btn-stop" onclick="stopScanner()">⏹ Stop</button>
+            <button class="btn-clear" onclick="clearHistory()">🗑 Clear History</button>
+        </div>
+
+        <div class="result-container">
+            <div class="result-label">Hasil Scan Terakhir:</div>
+            <div class="result-text" id="scan-result">Menunggu scan...</div>
+        </div>
+
+        <div class="scan-history">
+            <h3>Riwayat Scan</h3>
+            <div class="history-list" id="history-list">
+                <div style="color: #999; text-align: center;">Belum ada hasil scan</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Library Instascan untuk scanning barcode -->
+    <script src="https://unpkg.com/instascan@2.0.0-rc.4/dist/instascan.min.js"></script>
+    
+    <script>
+        let scanner = null;
+        let currentCamera = null;
+        let scanHistory = JSON.parse(localStorage.getItem('scanHistory') || '[]');
+
+        // Inisialisasi scanner
+        function initScanner() {
+            try {
+                scanner = new Instascan.Scanner({
+                    video: document.getElementById('scanner-video'),
+                    mirror: false,
+                    backgroundScan: false,
+                    scanPeriod: 1
+                });
+
+                scanner.addListener('scan', function(content) {
+                    handleScanResult(content);
+                });
+
+                getCameras();
+            } catch (error) {
+                console.error('Error inisialisasi scanner:', error);
+                alert('Gagal menginisialisasi scanner. Pastikan Anda mengakses melalui HTTPS atau localhost.');
+            }
+        }
+
+        // Mendapatkan daftar kamera
+        function getCameras() {
+            Instascan.Camera.getCameras().then(function(cameras) {
+                const select = document.getElementById('camera-select');
+                select.innerHTML = '<option value="">Pilih Kamera...</option>';
+                
+                if (cameras.length > 0) {
+                    cameras.forEach(function(camera, index) {
+                        const option = document.createElement('option');
+                        option.value = index;
+                        option.text = camera.name || `Kamera ${index + 1}`;
+                        select.appendChild(option);
+                    });
+                    
+                    // Auto-start dengan kamera belakang jika tersedia
+                    const backCamera = cameras.findIndex(camera => 
+                        camera.name && camera.name.toLowerCase().includes('back')
+                    );
+                    if (backCamera !== -1) {
+                        select.value = backCamera;
+                        startWithCamera(cameras[backCamera]);
+                    }
+                } else {
+                    select.innerHTML = '<option value="">Tidak ada kamera tersedia</option>';
+                }
+            }).catch(function(error) {
+                console.error('Error mendapatkan kamera:', error);
+                alert('Gagal mengakses kamera. Pastikan Anda memberikan izin akses kamera.');
+            });
+        }
+
+        // Memulai scanner dengan kamera tertentu
+        function startWithCamera(camera) {
+            currentCamera = camera;
+            scanner.start(camera).then(() => {
+                console.log('Scanner dimulai');
+            }).catch(error => {
+                console.error('Error memulai scanner:', error);
+                alert('Gagal memulai scanner. Pastikan kamera tidak sedang digunakan.');
+            });
+        }
+
+        // Fungsi untuk memulai scanner
+        function startScanner() {
+            const select = document.getElementById('camera-select');
+            const selectedIndex = select.value;
+            
+            if (selectedIndex === '') {
+                alert('Silakan pilih kamera terlebih dahulu');
+                return;
+            }
+
+            Instascan.Camera.getCameras().then(function(cameras) {
+                const camera = cameras[selectedIndex];
+                if (camera) {
+                    startWithCamera(camera);
+                }
+            }).catch(function(error) {
+                console.error('Error memulai scanner:', error);
+                alert('Gagal memulai scanner');
+            });
+        }
+
+        // Fungsi untuk menghentikan scanner
+        function stopScanner() {
+            if (scanner) {
+                scanner.stop().then(() => {
+                    console.log('Scanner dihentikan');
+                }).catch(error => {
+                    console.error('Error menghentikan scanner:', error);
+                });
+            }
+        }
+
+        // Menangani hasil scan
+        function handleScanResult(content) {
+            // Update hasil terakhir
+            document.getElementById('scan-result').textContent = content;
+            
+            // Simpan ke riwayat
+            const scanEntry = {
+                content: content,
+                timestamp: new Date().toLocaleString('id-ID')
+            };
+            
+            scanHistory.unshift(scanEntry);
+            if (scanHistory.length > 50) {
+                scanHistory = scanHistory.slice(0, 50);
+            }
+            
+            // Simpan ke localStorage
+            localStorage.setItem('scanHistory', JSON.stringify(scanHistory));
+            
+            // Update tampilan riwayat
+            updateHistoryDisplay();
+            
+            // Feedback visual
+            playFeedback();
+        }
+
+        // Memberikan feedback saat scan berhasil
+        function playFeedback() {
+            const resultDiv = document.querySelector('.result-text');
+            resultDiv.style.color = '#667eea';
+            resultDiv.style.transform = 'scale(1.1)';
+            
+            setTimeout(() => {
+                resultDiv.style.color = '#333';
+                resultDiv.style.transform = 'scale(1)';
+            }, 300);
+        }
+
+        // Update tampilan riwayat
+        function updateHistoryDisplay() {
+            const historyList = document.getElementById('history-list');
+            
+            if (scanHistory.length === 0) {
+                historyList.innerHTML = '<div style="color: #999; text-align: center;">Belum ada hasil scan</div>';
+                return;
+            }
+
+            historyList.innerHTML = scanHistory.map(entry => `
+                <div class="history-item">
+                    <div>${entry.content}</div>
+                    <div class="history-time">${entry.timestamp}</div>
+                </div>
+            `).join('');
+        }
+
+        // Menghapus riwayat
+        function clearHistory() {
+            if (confirm('Apakah Anda yakin ingin menghapus semua riwayat scan?')) {
+                scanHistory = [];
+                localStorage.removeItem('scanHistory');
+                updateHistoryDisplay();
+            }
+        }
+
+        // Event listener untuk pemilihan kamera
+        document.getElementById('camera-select').addEventListener('change', function() {
+            stopScanner();
+            if (this.value !== '') {
+                startScanner();
+            }
+        });
+
+        // Inisialisasi saat halaman dimuat
+        window.addEventListener('load', function() {
+            initScanner();
+            updateHistoryDisplay();
+        });
+
+        // Hentikan scanner saat halaman ditutup
+        window.addEventListener('beforeunload', function() {
+            stopScanner();
+        });
+    </script>
+</body>
+</html>
